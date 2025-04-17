@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Cloud RAM Dashboard</title>
+  <script src="/static/script.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 3px solid #fff;
+      border-radius: 50%;
+      border-top: 3px solid #00c4cc;
+      animation: spin 1s linear infinite;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .button {
+      background-color: #00c4cc;
+      border: none;
+      color: white;
+      padding: 10px 18px;
+      margin: 8px 4px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .button:hover {
+      background-color: #009fa3;
+    }
+
+    .button:disabled {
+      background-color: #999;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    iframe {
+      width: 100%;
+      height: 500px;
+      border: none;
+    }
+  </style>
+</head>
+<body onload="fetchCloudStatus()">
+  <h1>Cloud RAM Dashboard</h1>
+  <div id="status-text">Checking Cloud RAM...</div>
+
+  <h2>Running Tasks</h2>
+  <div id="tasks-container">
+    <p id="task-loading">Fetching tasks...</p>
+    <select id="tasks" multiple></select>
+    <div>
+      <button class="button" id="migrate-btn">Migrate Selected Tasks</button>
+      <span id="migration-spinner" style="display:none;" class="spinner"></span>
+      <p id="migration-status" style="margin-top: 10px; font-weight: bold;"></p>
+    </div>
+  </div>
+
+  <h2>VM GUI (VNC)</h2>
+  <div id="vnc-container">
+    <p id="vnc-loading">Loading VM GUI...</p>
+    <iframe id="vnc-iframe" style="display: none;"></iframe>
+    <button class="button" onclick="toggleFullscreen()" style="margin-top: 10px;">Toggle Fullscreen</button>
+  </div>
+
+  <script>
+    let taskArray = [];
+    let vmIp = null;
+
+    function fetchCloudStatus() {
+      vmIp = localStorage.getItem("vm_ip");
+      if (!vmIp) {
+        document.getElementById("status-text").innerHTML = "❌ No allocated VM found. Please allocate RAM first.";
+        return;
+      }
+
+      fetch(`/ram_usage?vm_ip=${vmIp}`)
+        .then(response => {
+          if (!response.ok) throw new Error(`Failed to fetch RAM usage: ${response.statusText}`);
+          return response.json();
+        })
+        .then(data => {
+          if (data.error) throw new Error(data.error);
+          document.getElementById("status-text").innerHTML = `
+            ✅ Cloud RAM Running at ${vmIp} <br>
+            🔹 Total RAM: ${(data.total_ram / (1024 ** 3)).toFixed(2)} GB<br>
+            🔹 Used RAM: ${(data.used_ram / (1024 ** 3)).toFixed(2)} GB (${data.percent_used}%)<br>
+            🔹 Available RAM: ${(data.available_ram / (1024 ** 3)).toFixed(2)} GB
+          `;
+          fetchLocalTasks();
+          loadVncGui();
+        })
+        .catch(error => {
+          console.error("❌ Error fetching Cloud RAM status:", error);
+          document.getElementById("status-text").innerHTML = `❌ Error: ${error.message}`;
+        });
+    }
+
+    function fetchLocalTasks() {
+      let taskList = document.getElementById("tasks");
+      let loadingText = document.getElementById("task-loading");
+
+      loadingText.style.display = "block";
+      taskList.innerHTML = "";
+      taskArray = [];
+
+      fetch("http://localhost:8000/running_tasks/")
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          loadingText.style.display = "none";
+          if (!data.tasks || data.tasks.length === 0) {
+            taskList.innerHTML = "<option>No running tasks found</option>";
+            return;
+          }
+          data.tasks.forEach(task => {
+            if (['notepad++.exe', 'chrome.exe', 'Code.exe'].includes(task.name)) {
+              taskArray.push({ pid: task.pid, name: task.name });
+            }
+          });
+          populateDropdown();
+          loadingText.innerText = `${taskArray.length} tasks fetched.`;
+        })
+        .catch(error => {
+          console.error("❌ Error fetching local tasks:", error);
+          loadingText.style.color = "red";
+          loadingText.innerText = `❌ Failed to fetch tasks: ${error.message}`;
+        });
+    }
+
+    function populateDropdown() {
+      let taskList = document.getElementById("tasks");
+      taskList.innerHTML = "";
+
+      if (taskArray.length === 0) {
+        let option = document.createElement("option");
+        option.text = "No tasks available";
+        taskList.add(option);
+        return;
+      }
+
+      taskArray.forEach(task => {
+        let option = document.createElement("option");
+        option.value = task.pid;
+        option.text = `${task.name} (PID: ${task.pid})`;
+        taskList.add(option);
+      });
+    }
+
+    function loadVncGui() {
+  if (!vmIp) {
+    document.getElementById("vnc-loading").innerText = "❌ No VM IP found. Please ensure Cloud RAM is running.";
+    return;
+  }
+
+  // Auto-connect enabled by adding autoconnect=true to query string
+  const vncUrl = `http://${vmIp}:8080/vnc.html?autoconnect=true&resize=scale`;
+  const vncIframe = document.getElementById("vnc-iframe");
+  const vncLoading = document.getElementById("vnc-loading");
+
+  vncIframe.src = vncUrl;
+  vncIframe.onload = () => {
+    vncLoading.style.display = "none";
+    vncIframe.style.display = "block";
+  };
+  vncIframe.onerror = () => {
+    vncLoading.style.color = "red";
+    vncLoading.innerText = "❌ Failed to load VM GUI. Check VM connection.";
+  };
+}
+
+
+    function toggleFullscreen() {
+      const iframe = document.getElementById("vnc-iframe");
+      if (!document.fullscreenElement) {
+        if (iframe.requestFullscreen) {
+          iframe.requestFullscreen();
+        } else if (iframe.webkitRequestFullscreen) {
+          iframe.webkitRequestFullscreen();
+        } else if (iframe.mozRequestFullScreen) {
+          iframe.mozRequestFullScreen();
+        } else if (iframe.msRequestFullscreen) {
+          iframe.msRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        }
+      }
+    }
+  </script>
+</body>
+</html>

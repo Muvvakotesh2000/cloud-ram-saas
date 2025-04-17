@@ -1,0 +1,7 @@
+boto3
+psutil
+fastapi
+uvicorn
+requests
+watchdog
+python-jose[cryptography]

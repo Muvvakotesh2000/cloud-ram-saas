@@ -1,12 +1,19 @@
-document.addEventListener("DOMContentLoaded", function () {
+window.onload = function () {
+    // Ensure Amplify is defined
+    if (typeof Amplify === 'undefined') {
+        console.error('AWS Amplify library failed to load. Please check the script tag in index.html.');
+        document.getElementById('login-error').textContent = 'Failed to load authentication library. Please try again later.';
+        return;
+    }
+
     // Configure AWS Amplify
     Amplify.configure({
         Auth: {
-            region: 'us-east-2', // Match the region of your Cognito User Pool
+            region: 'us-east-2',
             userPoolId: 'us-east-2_4Fo9tOcji',
             userPoolWebClientId: '18bacrpgl7tnfj5sgi7h1iq2oq',
             oauth: {
-                domain: 'us-east-24fo9tocji.auth.us-east-2.amazoncognito.com', // Remove the https:// prefix
+                domain: 'us-east-24fo9tocji.auth.us-east-2.amazoncognito.com',
                 scope: ['email', 'openid', 'profile'],
                 redirectSignIn: window.location.origin + '/callback',
                 redirectSignOut: window.location.origin + '/login',
@@ -23,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (allocateBtn) {
         allocateBtn.addEventListener("click", allocateRAM);
     }
-});
+};
 
 // Navigation
 function navigate(page) {
@@ -113,7 +120,7 @@ async function allocateRAM(event) {
         const user = await Amplify.Auth.currentAuthenticatedUser();
         const token = user.signInUserSession.idToken.jwtToken;
 
-        const response = await fetch("/allocate", {
+        const response = await fetch("http://cloudrambackend.us-east-1.elasticbeanstalk.com/allocate", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -155,7 +162,7 @@ window.addEventListener('beforeunload', async () => {
         try {
             const user = await Amplify.Auth.currentAuthenticatedUser();
             const token = user.signInUserSession.idToken.jwtToken;
-            await fetch("/release_ram/", {
+            await fetch("http://cloudrambackend.us-east-1.elasticbeanstalk.com/release_ram/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

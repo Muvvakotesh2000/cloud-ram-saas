@@ -3,13 +3,17 @@
 <head>
     <title>Cloud RAM SaaS</title>
     <link rel="stylesheet" href="/static/style.css">
-    <!-- Load the full AWS Amplify library -->
     <script src="https://unpkg.com/aws-amplify@4.3.46/dist/aws-amplify.min.js"></script>
-    <script src="/static/script.js" defer></script>
+  
+  <script>window.Amplify = window.aws_amplify;</script>
+
+  <script src="/static/script.js" defer></script>
+
+    
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 </head>
 <body>
     <div id="app">
-        <!-- Navigation -->
         <nav id="nav" style="display: none;">
             <button onclick="navigate('home')">Home</button>
             <button onclick="navigate('allocate')">Allocate RAM</button>

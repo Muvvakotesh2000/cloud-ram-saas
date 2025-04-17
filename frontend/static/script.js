@@ -1,19 +1,20 @@
-window.onload = function () {
-    // Ensure Amplify is defined
-    if (typeof Amplify === 'undefined') {
-        console.error('AWS Amplify library failed to load. Please check the script tag in index.html.');
-        document.getElementById('login-error').textContent = 'Failed to load authentication library. Please try again later.';
+document.addEventListener("DOMContentLoaded", function () {
+    // Ensure Amplify is loaded
+    
+    if (!window.Amplify || !window.Amplify.Auth) {
+        console.error("Amplify library not loaded. Please check the script tag in index.html.");
         return;
-    }
+    }    
+
 
     // Configure AWS Amplify
-    Amplify.configure({
+    window.Amplify.Auth.configure({
         Auth: {
             region: 'us-east-2',
             userPoolId: 'us-east-2_4Fo9tOcji',
             userPoolWebClientId: '18bacrpgl7tnfj5sgi7h1iq2oq',
             oauth: {
-                domain: 'us-east-24fo9tocji.auth.us-east-2.amazoncognito.com',
+                domain: 'CloudRAMSAAS.auth.us-east-2.amazoncognito.com',
                 scope: ['email', 'openid', 'profile'],
                 redirectSignIn: window.location.origin + '/callback',
                 redirectSignOut: window.location.origin + '/login',
@@ -30,17 +31,15 @@ window.onload = function () {
     if (allocateBtn) {
         allocateBtn.addEventListener("click", allocateRAM);
     }
-};
+});
 
-// Navigation
 function navigate(page) {
     const pages = ['login-page', 'register-page', 'home-page', 'allocate-page'];
     pages.forEach(p => document.getElementById(p).style.display = 'none');
     document.getElementById(`${page}-page`).style.display = 'block';
-    document.getElementById('nav').style.display = page === 'login' || page === 'register' ? 'none' : 'block';
+    document.getElementById('nav').style.display = (page === 'login' || page === 'register') ? 'none' : 'block';
 }
 
-// Check authentication state
 async function checkAuthState() {
     try {
         const user = await Amplify.Auth.currentAuthenticatedUser();
@@ -50,11 +49,11 @@ async function checkAuthState() {
             navigate('login');
         }
     } catch (err) {
+        console.error("Error checking auth state:", err);
         navigate('login');
     }
 }
 
-// Login
 async function login() {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
@@ -63,20 +62,18 @@ async function login() {
         await Amplify.Auth.signIn(email, password);
         navigate('home');
     } catch (err) {
-        errorEl.textContent = err.message;
+        errorEl.textContent = err.message || 'Login failed. Please try again.';
     }
 }
 
-// Login with Google
 async function loginWithGoogle() {
     try {
         await Amplify.Auth.federatedSignIn({ provider: 'Google' });
     } catch (err) {
-        document.getElementById('login-error').textContent = err.message;
+        document.getElementById('login-error').textContent = err.message || 'Google login failed. Please try again.';
     }
 }
 
-// Register
 async function register() {
     const firstName = document.getElementById('register-firstname').value;
     const lastName = document.getElementById('register-lastname').value;
@@ -99,11 +96,10 @@ async function register() {
         alert('Registration successful! Please check your email to verify your account.');
         navigate('login');
     } catch (err) {
-        errorEl.textContent = err.message;
+        errorEl.textContent = err.message || 'Registration failed. Please try again.';
     }
 }
 
-// Allocate RAM
 async function allocateRAM(event) {
     event.preventDefault();
     const ramSize = document.getElementById("ram").value;
@@ -120,7 +116,7 @@ async function allocateRAM(event) {
         const user = await Amplify.Auth.currentAuthenticatedUser();
         const token = user.signInUserSession.idToken.jwtToken;
 
-        const response = await fetch("http://cloudrambackend.us-east-1.elasticbeanstalk.com/allocate", {
+        const response = await fetch("/allocate", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -142,7 +138,6 @@ async function allocateRAM(event) {
         localStorage.setItem("vm_ip", data.ip);
         localStorage.setItem("vm_id", data.vm_id);
 
-        // Redirect to status page
         window.location.href = "/status";
     } catch (error) {
         loadingText.textContent = `Error: ${error.message}`;
@@ -155,14 +150,13 @@ async function allocateRAM(event) {
     }
 }
 
-// Terminate VM on tab close
 window.addEventListener('beforeunload', async () => {
     const vmId = localStorage.getItem("vm_id");
     if (vmId) {
         try {
             const user = await Amplify.Auth.currentAuthenticatedUser();
             const token = user.signInUserSession.idToken.jwtToken;
-            await fetch("http://cloudrambackend.us-east-1.elasticbeanstalk.com/release_ram/", {
+            await fetch("/release_ram/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

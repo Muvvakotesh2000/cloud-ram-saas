@@ -2,11 +2,11 @@ document.addEventListener("DOMContentLoaded", function () {
     // Configure AWS Amplify
     Amplify.configure({
         Auth: {
-            region: 'us-east-1',
-            userPoolId: 'us-east-2_4Fo9tOcji', // Replace with your Cognito User Pool ID
-            userPoolWebClientId: '18bacrpgl7tnfj5sgi7h1iq2oq', // Replace with your App Client ID
+            region: 'us-east-2', // Match the region of your Cognito User Pool
+            userPoolId: 'us-east-2_4Fo9tOcji',
+            userPoolWebClientId: '18bacrpgl7tnfj5sgi7h1iq2oq',
             oauth: {
-                domain: 'https://us-east-24fo9tocji.auth.us-east-2.amazoncognito.com',
+                domain: 'us-east-24fo9tocji.auth.us-east-2.amazoncognito.com', // Remove the https:// prefix
                 scope: ['email', 'openid', 'profile'],
                 redirectSignIn: window.location.origin + '/callback',
                 redirectSignOut: window.location.origin + '/login',

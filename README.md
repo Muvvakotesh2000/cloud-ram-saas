@@ -1,300 +1,341 @@
-# 🌥️ Cloud RAM SaaS
+# CloudRAMSaaS
 
-Welcome to **Cloud RAM SaaS**, an innovative web application that lets you dynamically allocate cloud-based RAM resources on AWS EC2 instances! 🚀 Whether you're running memory-intensive tasks or need a remote environment for your apps, this project makes it easy to spin up virtual machines, migrate tasks, and even sync files like a pro. With a sleek frontend, a robust backend, and seamless AWS integration, Cloud RAM SaaS is your go-to solution for cloud computing needs.
+A cloud-based Software as a Service (SaaS) platform that allows users to dynamically allocate RAM resources on AWS EC2 instances and migrate local applications to cloud VMs. Extend your local machine's available RAM by offloading applications to cloud-hosted Windows VMs with VNC GUI access.
 
----
+## Features
 
-## 🎯 Features That Shine
+- **Dynamic Cloud RAM Allocation** - Choose from 1GB, 2GB, or 4GB RAM configurations
+- **Application Migration** - Move local applications (Notepad++, Chrome, VS Code) to cloud VMs
+- **Supabase Authentication** - Secure login with email/password and Google OAuth
+- **Real-time RAM Monitoring** - Track RAM usage on cloud VMs
+- **VNC Remote Desktop Access** - Interact with cloud VMs through embedded VNC viewer
+- **File Synchronization** - Automatic bidirectional sync of Notepad++ documents via AWS S3
+- **Auto-Sync** - Continuous file monitoring with 30-second periodic sync
 
-- 🔒 **Secure Authentication**: Log in effortlessly with AWS Cognito using email/password or Google SSO.
-- 💾 **Dynamic RAM Allocation**: Choose from 1GB, 2GB, or 4GB RAM to create EC2 instances on demand.
-- 🚀 **Task Migration**: Move local tasks (e.g., Notepad++, Chrome, VS Code) to the cloud with a single click.
-- 📊 **Interactive Dashboard**: Monitor RAM usage, view running tasks, and access your VM via a browser-based VNC client.
-- 📁 **File Sync Magic**: Keep your Notepad++ sessions in sync between local and cloud environments.
-- 🧹 **Auto-Cleanup**: Automatically terminates VMs when you close the browser to save resources.
+## Tech Stack
 
-> **Fun Fact**: Did you know that Cloud RAM SaaS can spin up a VM in just 10-15 minutes? That's faster than brewing a perfect cup of coffee! ☕
+### Frontend
+- HTML5 (Single Page Application)
+- Vanilla JavaScript
+- CSS3 with modern gradients
+- Flask (Python) for static file serving
+- Supabase JS SDK v2
 
----
+### Backend
+- FastAPI (async Python web framework)
+- Uvicorn (ASGI server)
+- Python 3.x
 
-## 🏗️ Project Architecture
+### Infrastructure & Cloud
+- AWS EC2 (Windows Server 2022 VMs)
+- AWS S3 (file storage)
+- AWS IAM roles
+- Boto3 (AWS SDK for Python)
 
-Cloud RAM SaaS is built with a modern tech stack to ensure scalability and performance:
+### Authentication
+- Supabase (managed auth backend)
+- JWT tokens (HTTP Bearer authentication)
 
-- **Frontend**: HTML, JavaScript, and CSS, hosted on **AWS Amplify** for lightning-fast delivery.
-- **Backend**: **FastAPI** running on an AWS EC2 Windows instance, handling VM creation and task management.
-- **AWS Services**:
-  - **EC2**: Powers virtual machines for RAM allocation.
-  - **DynamoDB**: Stores user-VM mappings securely.
-  - **Cognito**: Manages user authentication with ease.
-  - **Amplify**: Hosts the frontend with automatic scaling.
+### Process & File Management
+- psutil (process monitoring)
+- watchdog (file system monitoring)
+- win32gui, win32con (Windows GUI interaction)
 
----
-
-## 📁 Project Structure
-
-Here’s how the repository is organized:
+## Project Structure
 
 ```
-CLOUDRAMSAAS/
-├── backend/
-│   ├── vm_scripts/                  # Scripts for VM management
-│   ├── aws_manager.py              # AWS EC2 and VM management logic
-│   ├── main.py                     # FastAPI backend server
-│   ├── notepad_file_paths.txt      # Stores Notepad++ file paths for syncing
-│   ├── process_manager.py          # Handles task migration and file syncing
-│   └── requirements.txt            # Backend dependencies
-├── frontend/
-│   ├── static/
-│   │   ├── script.js               # Frontend JavaScript logic
-│   │   ├── style.css               # Styling for the frontend
-│   ├── app.py                      # Flask app for local frontend testing
-│   ├── index.html                  # Main page (login, registration, home, allocate)
-│   └── status.html                 # VM dashboard page
-└── README.md                       # You're reading it!
+CloudRAMSaaS/
+├── frontend/                    # Frontend SPA (Flask + HTML/JS)
+│   ├── app.py                   # Flask app for static file serving
+│   ├── templates/               # Jinja templates
+│   │   ├── index.html           # Login/Register/Home SPA
+│   │   └── status.html          # Cloud RAM dashboard
+│   └── static/                  # Static assets
+│       ├── script.js            # SPA logic, auth, RAM allocation
+│       ├── status_auth.js       # Supabase auth helper
+│       └── style.css            # Application styling
+│
+├── backend/                     # FastAPI backend (core API)
+│   ├── main.py                  # FastAPI app with endpoints
+│   ├── aws_manager.py           # AWS EC2/S3 management
+│   ├── process_manager.py       # Local process/file management
+│   ├── requirements.txt         # Python dependencies
+│   ├── notepad_file_paths.txt   # Tracked Notepad++ files
+│   ├── cloud-ram-key.pem        # EC2 SSH key pair
+│   ├── unsaved_files/           # Temporary unsaved file backups
+│   └── vm_scripts/              # Scripts deployed to EC2 VMs
+│       ├── vm_server.py         # Flask server running on VM
+│       ├── vm_startup_script.ps1# PowerShell bootstrap script
+│       └── requirements.txt     # VM Python dependencies
+│
+└── README.md
 ```
 
----
-
-## 🚀 Getting Started
-
-Ready to dive in? Follow these steps to set up and run Cloud RAM SaaS locally or in the cloud!
+## Installation
 
 ### Prerequisites
 
-- **AWS Account**: Access to EC2, DynamoDB, Cognito, and Amplify.
-- **Python 3.8+**: For running the backend.
-- **Git**: To clone the repository.
-- **Node.js** (optional): For local frontend development.
-- **AWS CLI** (optional): For configuring AWS credentials.
+- Python 3.8+
+- AWS Account with EC2 and S3 access
+- Supabase account (for authentication)
+- Windows OS (for local process management features)
 
-### 1️⃣ Backend Setup (EC2 Windows Instance)
+### Backend Setup
 
-1. **Clone the Repository**:
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+### Frontend Setup
+
+```bash
+cd frontend
+pip install flask
+```
+
+### AWS Configuration
+
+1. **Create IAM Role**: Create an IAM role named `CloudRAMEC2Role` with EC2 and S3 permissions
+
+2. **Create S3 Buckets**:
+   - `cloud-ram-scripts` - For storing VM bootstrap scripts
+   - `notepadfiles` - For file synchronization
+
+3. **Configure AWS Credentials**: Ensure AWS credentials are configured locally:
    ```bash
-   git clone https://github.com/Muvvakotesh2000/cloud-ram-saas.git
-   cd cloud-ram-saas
+   aws configure
    ```
 
-2. **Set Up an EC2 Instance**:
-   - Launch a Windows EC2 instance (e.g., `t2.medium` with 2 vCPUs, 4GB RAM).
-   - Configure the security group to allow:
-     - **Port 8000 (HTTP)**: For FastAPI backend.
-     - **Port 8080 (VNC)**: For VM GUI access.
-   - Connect via RDP.
+### Supabase Configuration
 
-3. **Install Dependencies**:
-   - Install Python 3.8+ on the EC2 instance.
-   - Install backend dependencies:
-     ```bash
-     pip install -r backend/requirements.txt
-     ```
+1. Create a Supabase project
+2. Enable Email/Password and Google OAuth authentication
+3. Update the Supabase URL and anon key in:
+   - `/frontend/static/script.js`
+   - `/frontend/static/status_auth.js`
+   - `/backend/main.py`
 
-4. **Configure AWS Credentials**:
-   - Set up AWS credentials for EC2, DynamoDB, and other services.
-   - Attach an IAM role to the EC2 instance with permissions for:
-     - `ec2:RunInstances`, `ec2:TerminateInstances`, `ec2:DescribeInstances`
-     - `dynamodb:PutItem`, `dynamodb:GetItem`, `dynamodb:DeleteItem`
+## Running the Application
 
-5. **Run the Backend**:
-   - Navigate to the backend directory:
-     ```bash
-     cd backend
-     ```
-   - Start the FastAPI server:
-     ```bash
-     python -m uvicorn main:app --host 0.0.0.0 --port 8000
-     ```
-   - Test the backend:
-     ```
-     http://<ec2-public-ip>:8000/health
-     ```
-     Expected response: `{"status": "healthy"}`
+### Start Backend Server
 
-6. **Keep It Running**:
-   - Use a process manager like `pm2` or Windows Task Scheduler to ensure the backend persists after RDP sessions close.
+```bash
+cd backend
+python main.py
+```
+The backend API runs on `http://0.0.0.0:8000`
 
-> **Pro Tip**: Set up HTTPS on your EC2 instance using AWS ALB or Let’s Encrypt to secure API calls! 🔐
+### Start Frontend Server
 
-### 2️⃣ Frontend Setup (AWS Amplify)
+```bash
+cd frontend
+python app.py
+```
+The frontend runs on `http://localhost:5000`
 
-1. **Configure AWS Amplify**:
-   - In the [AWS Amplify Console](https://aws.amazon.com/amplify/), create a new app.
-   - Connect to your GitHub repository (`https://github.com/Muvvakotesh2000/cloud-ram-saas`) or upload the `frontend` folder manually.
+### Access the Application
 
-2. **Set Environment Variables**:
-   - In the Amplify Console, go to **App Settings > Environment Variables** and add:
-     ```
-     API_URL=http://<ec2-public-ip>:8000
-     ```
-     Example: `API_URL=http://18.220.82.87:8000`
+1. Open `http://localhost:5000` in your browser
+2. Register or login with your credentials
+3. Select desired RAM allocation (1GB, 2GB, or 4GB)
+4. Wait for VM provisioning to complete
+5. Access the dashboard to monitor RAM and migrate tasks
 
-3. **Update Frontend Code**:
-   - Ensure `frontend/static/script.js` and `frontend/status.html` reference the backend URL via `window.env.API_URL` or directly:
-     ```javascript
-     const API_URL = window.env?.API_URL || "http://<ec2-public-ip>:8000";
-     ```
-   - Add environment variable support in `frontend/index.html`:
-     ```html
-     <script>
-         window.env = { API_URL: "http://<ec2-public-ip>:8000" };
-     </script>
-     ```
+## API Endpoints
 
-4. **Deploy the Frontend**:
-   - Push changes to your GitHub repository:
-     ```bash
-     git add .
-     git commit -m "Update frontend with backend URL"
-     git push origin main
-     ```
-   - Amplify will auto-deploy. Get the URL (e.g., `https://main.d2xxxxx.amplifyapp.com`).
+### Authentication Required Endpoints
 
-5. **Test the Frontend**:
-   - Open the Amplify URL in a browser.
-   - Log in, allocate RAM, and check the status page.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/allocate` | Allocate RAM and create EC2 instance |
+| POST | `/release_ram` | Terminate VM and release resources |
+| GET | `/ram_usage` | Get current VM RAM usage statistics |
+| POST | `/move_task` | Move a single task to cloud VM |
+| POST | `/migrate_tasks` | Migrate multiple tasks with file sync |
+| POST | `/sync_notepad` | Sync Notepad++ files to cloud |
 
-### 3️⃣ AWS Cognito Setup
+### Public Endpoints
 
-1. **Create a User Pool**:
-   - In [AWS Cognito](https://aws.amazon.com/cognito/), create a user pool.
-   - Enable email/password and Google SSO.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check endpoint |
+| GET | `/running_tasks` | List locally running tasks |
 
-2. **Create an App Client**:
-   - Add an app client with OAuth scopes: `email`, `openid`, `profile`.
-   - Set redirect URLs:
-     - Sign-in: `https://<amplify-url>/callback`
-     - Sign-out: `https://<amplify-url>/login`
+### Request/Response Examples
 
-3. **Update Frontend Config**:
-   - In `frontend/static/script.js`, configure Amplify Auth with your Cognito details:
-     ```javascript
-     window.Amplify.Auth.configure({
-         Auth: {
-             region: 'us-east-2',
-             userPoolId: '<your-user-pool-id>',
-             userPoolWebClientId: '<your-app-client-id>',
-             oauth: {
-                 domain: '<your-cognito-domain>.auth.us-east-2.amazoncognito.com',
-                 scope: ['email', 'openid', 'profile'],
-                 redirectSignIn: window.location.origin + '/callback',
-                 redirectSignOut: window.location.origin + '/login',
-                 responseType: 'code'
-             }
-         }
-     });
-     ```
-   - Replace `<your-user-pool-id>`, `<your-app-client-id>`, and `<your-cognito-domain>` with your Cognito settings.
+**Allocate RAM**
+```json
+// POST /allocate
+// Request
+{ "ram_size": 2 }
 
-> **Note**: Keep sensitive credentials like user pool IDs secure. Use environment variables or AWS Secrets Manager in production! 🔒
+// Response
+{ "vm_id": "i-0abc123def456", "ip": "52.23.145.67" }
+```
 
----
+**Get RAM Usage**
+```json
+// GET /ram_usage?vm_ip=52.23.145.67
+// Response
+{
+  "total_ram": 2147483648,
+  "used_ram": 536870912,
+  "available_ram": 1610612736,
+  "percent_used": 25.0
+}
+```
 
-## 🎮 How to Use It
+**Migrate Tasks**
+```json
+// POST /migrate_tasks
+// Request
+{
+  "task_names": ["notepad++.exe"],
+  "vm_ip": "52.23.145.67"
+}
 
-1. **Access the App**:
-   - Visit the Amplify URL (e.g., `https://main.d2xxxxx.amplifyapp.com`).
-   - Log in or register using Cognito.
+// Response
+{
+  "results": [
+    { "task": "notepad++.exe", "success": true }
+  ]
+}
+```
 
-2. **Allocate RAM**:
-   - Go to the “Allocate RAM” page.
-   - Select 1GB, 2GB, or 4GB and click “Allocate.”
-   - Wait 10-15 minutes for the VM to spin up.
+## Architecture
 
-3. **Monitor Your VM**:
-   - Navigate to `/status` to view:
-     - RAM usage (total, used, available).
-     - Running tasks.
-     - VM GUI via VNC (port 8080).
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   Browser       │────▶│  Frontend       │────▶│  Backend API    │
+│   (User)        │     │  (Flask:5000)   │     │  (FastAPI:8000) │
+└─────────────────┘     └─────────────────┘     └────────┬────────┘
+                                                         │
+                        ┌────────────────────────────────┼────────────────────────────────┐
+                        │                                ▼                                │
+                        │  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────┐ │
+                        │  │   AWS EC2       │    │    AWS S3       │    │  Supabase   │ │
+                        │  │  (Windows VM)   │    │ (File Storage)  │    │   (Auth)    │ │
+                        │  │                 │    │                 │    │             │ │
+                        │  │ ┌─────────────┐ │    │ - vm scripts    │    │ - JWT       │ │
+                        │  │ │ Flask Server│ │◀───│ - notepad files │    │ - OAuth     │ │
+                        │  │ │ (Port 5000) │ │    │                 │    │             │ │
+                        │  │ └─────────────┘ │    └─────────────────┘    └─────────────┘ │
+                        │  │ ┌─────────────┐ │                                           │
+                        │  │ │  UltraVNC   │ │◀── VNC Access (Port 5900)                 │
+                        │  │ └─────────────┘ │                                           │
+                        │  └─────────────────┘                                           │
+                        │                         AWS Cloud                              │
+                        └────────────────────────────────────────────────────────────────┘
+```
 
-4. **Migrate Tasks**:
-   - Select tasks like Notepad++ or Chrome from the dashboard.
-   - Click “Migrate” to move them to the cloud VM.
+## Instance Type Mapping
 
-5. **Sync Notepad++ Files**:
-   - Use the “Sync Notepad++” feature to keep your open files in sync.
+| RAM Selection | EC2 Instance Type | Actual RAM |
+|---------------|-------------------|------------|
+| 1 GB          | t3.micro          | 1 GB       |
+| 2 GB          | t3.small          | 2 GB       |
+| 4 GB          | t3.medium         | 4 GB       |
 
-6. **Clean Up**:
-   - Close the browser tab to automatically terminate the VM and free resources.
+## File Synchronization
 
----
+The application provides automatic file synchronization for Notepad++ documents:
 
-## 🛠️ Troubleshooting
+1. **Initial Sync**: When migrating Notepad++ to cloud, all open files are uploaded to S3
+2. **File Watcher**: Local file changes are detected using the `watchdog` library
+3. **Auto-Upload**: Modified files are automatically uploaded to S3
+4. **Periodic Sync**: Every 30 seconds, files are synced bidirectionally
+5. **Conflict Resolution**: Files are compared by modification time; newer version wins
 
-Got issues? Here’s how to fix common problems:
+### S3 Bucket Structure
 
-- **Backend Not Responding**:
-  - Verify the backend is running: `curl http://<ec2-public-ip>:8000/health`.
-  - Check EC2 security group: Allow TCP 8000 and 8080.
-  - Ensure Windows Firewall isn’t blocking ports.
+```
+notepadfiles/
+├── document1.txt
+├── document2.py
+└── notes.md
 
-- **CORS Errors**:
-  - Update `backend/main.py` to allow the Amplify domain:
-    ```python
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["https://<amplify-url>"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-    ```
+cloud-ram-scripts/
+└── vm_server.py
+```
 
-- **Mixed Content Errors**:
-  - If using HTTP backend with HTTPS frontend, configure HTTPS on EC2 (e.g., via AWS ALB).
-  - Update frontend to use HTTPS backend URL.
+## Security Considerations
 
-- **Cognito Login Fails**:
-  - Double-check user pool and app client settings in Cognito.
-  - Ensure redirect URLs match the Amplify domain.
+### Current Implementation
+- JWT-based authentication via Supabase
+- Bearer token required for protected API endpoints
+- CORS configured for localhost development
 
-For more help, open an issue on [GitHub](https://github.com/Muvvakotesh2000/cloud-ram-saas/issues)!
+### Recommendations for Production
+- Move Supabase keys to environment variables
+- Implement rate limiting on API endpoints
+- Use persistent storage (RDS/DynamoDB) instead of in-memory state
+- Implement request signing for VM-to-backend communication
+- Use HTTPS for all communications
+- Rotate EC2 key pairs regularly
+- Enable VPC security groups with minimal required ports
 
----
+## Ports Used
 
-## 🌟 Contributing
+| Service | Port | Purpose |
+|---------|------|---------|
+| Frontend (Flask) | 5000 | Web application UI |
+| Backend (FastAPI) | 8000 | REST API |
+| VM Flask Server | 5000 | VM management API |
+| VNC | 5900 | Remote desktop access |
+| RDP | 3389 | Windows Remote Desktop |
+| HTTP | 80 | General HTTP |
+| HTTPS | 443 | Secure HTTP |
 
-We’d love your contributions to make Cloud RAM SaaS even better! Here’s how to get started:
+## Logging
 
-1. Fork the repository.
-2. Create a feature branch:
-   ```bash
-   git checkout -b feature/your-cool-feature
-   ```
-3. Commit your changes:
-   ```bash
-   git commit -m "Add your cool feature"
-   ```
-4. Push to GitHub:
-   ```bash
-   git push origin feature/your-cool-feature
-   ```
-5. Open a pull request on [GitHub](https://github.com/Muvvakotesh2000/cloud-ram-saas/pulls).
+- **Backend**: Standard Python logging to console
+- **Process Manager**: Logs to `/backend/process_manager.log`
+- **VM Server**: Logs to `C:\CloudRAM\vm_server.log`
 
----
+## Known Limitations
 
-## 📚 References & Resources
+1. **Windows Only**: Process migration features work only on Windows
+2. **In-Memory State**: VM mappings are lost if backend restarts
+3. **Hardcoded Paths**: Some Windows paths are hardcoded for specific user profiles
+4. **Single VM per User**: Currently supports one VM per authenticated user
+5. **Limited Applications**: Only Notepad++, Chrome, and VS Code migration supported
 
-- [FastAPI Documentation](https://fastapi.tiangolo.com/) – Learn more about building APIs.
-- [AWS Amplify](https://aws.amazon.com/amplify/) – Host your frontend with ease.
-- [AWS Cognito](https://aws.amazon.com/cognito/) – Secure user authentication.
-- [AWS EC2](https://aws.amazon.com/ec2/) – Run your VMs in the cloud.
-- [Boto3 Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) – AWS SDK for Python.
-- [VNC Viewer](https://www.realvnc.com/en/connect/) – For remote VM access.
+## Troubleshooting
 
----
+### VM Creation Timeout
+If VM creation times out (default: 30 minutes), check:
+- AWS credentials are valid
+- IAM role has necessary permissions
+- EC2 service limits in your region
 
-## 📜 License
+### File Sync Issues
+If files aren't syncing:
+- Verify S3 bucket permissions
+- Check `process_manager.log` for errors
+- Ensure Notepad++ is properly configured
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+### Authentication Failures
+If login fails:
+- Verify Supabase project is active
+- Check anon key is correctly configured
+- Ensure email verification is complete (if enabled)
 
----
+## Contributing
 
-## 📬 Get in Touch
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-Have questions or ideas? Reach out!
+## License
 
-- **GitHub Issues**: [https://github.com/Muvvakotesh2000/cloud-ram-saas/issues](https://github.com/Muvvakotesh2000/cloud-ram-saas/issues)
-- **Email**: [muvvakotesh2000@example.com](mailto:muvvakoteshyadav@gmail.com) <!-- Replace with your email -->
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-Let’s build the future of cloud computing together! 🌍
+## Acknowledgments
+
+- AWS for cloud infrastructure
+- Supabase for authentication services
+- UltraVNC for remote desktop capabilities
+- The open-source Python community
